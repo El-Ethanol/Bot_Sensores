@@ -1,6 +1,6 @@
 import logging, os, signal
 from telegram.ext import Updater, CommandHandler, MessageHandler, Filters
-from telegram import ReplyKeyboardMarkup, KeyboardButton, InlineKeyboardButton, InlineKeyboardMarkup
+from telegram import ReplyKeyboardMarkup, KeyboardButton, InlineKeyboardButton, InlineKeyboardMarkup, keyboardbutton
 from telegram.ext.messagehandler import MessageHandler  
 Token = "1623948894:AAEPSfMTtW7q9mu96Y-7Ftvdl5JkYtEsj9c"
 
@@ -14,14 +14,14 @@ ONE, TWO, THREE, FOUR = range(4)
 def start(update,context):
     logger.info('He recibido un comando start')
     name = update.effective_chat.first_name
-    text = "¡Hola, " + name + "! 👋👋👋\nSoy el bot del Lab. de Detectores del ICN.\
+    text = "¡Hola, " + name + "! 👋👋👋\n\nSoy el bot del Lab. de Detectores del ICN.🤖\
            \nTe puedo dar las últimas mediciones de los sensores de temperatura y de presión."
     chat_id = update.effective_chat.id
     keyboard(chat_id, text, context)
     
 def keyboard(chat_id, text, context):
     kb = [[KeyboardButton("/mediciones")], [KeyboardButton("/temperatura")], [KeyboardButton("/presion")],
-          [KeyboardButton("/help")], [KeyboardButton("/faq")] ,[KeyboardButton("/stop")]]
+          [KeyboardButton("/help"), KeyboardButton("/config"), KeyboardButton("/faq")], [KeyboardButton("/kill")]]
     kb1 = ReplyKeyboardMarkup(kb, resize_keyboard=True, one_time_keyboard=True)
     context.bot.send_message(chat_id, text, reply_markup=kb1)
     
@@ -75,7 +75,15 @@ def faq(update,context):
     text = "Lo siento, " + name + ".\nEse no es un comando válido. 😓😓" 
     chat_id = update.effective_chat.id
     keyboard(chat_id, text, context)
-
+    
+def config(update,context):
+    logger.info('He recibido un comando config')
+    text= "⚙ ¿Qué deseas configurar? ⚙"
+    chat_id = update.effective_chat.id
+    keyboard = [[InlineKeyboardButton("Cambiar archivo de temperatura.", callback_data=str(ONE))],
+                 [InlineKeyboardButton("Cambiar archivo de presión.", callback_data=str(ONE)) ]]
+    context.bot.send_message(chat_id, text, reply_markup=InlineKeyboardMarkup(keyboard))
+    
 def unknown(update,context):
     logger.info('He recibido un comando inválido')
     name = update.effective_chat.first_name
@@ -94,6 +102,7 @@ if __name__ == '__main__':
     dispatcher.add_handler(CommandHandler('temperatura', temperatura))
     dispatcher.add_handler(CommandHandler('presion', presion))
     dispatcher.add_handler(CommandHandler('faq', faq))
+    dispatcher.add_handler(CommandHandler('config', config))
       
     unknown_handler = MessageHandler(Filters.command, unknown)
     dispatcher.add_handler(unknown_handler)
