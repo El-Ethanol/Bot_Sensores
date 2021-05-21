@@ -42,6 +42,7 @@ def help1(update,context):
     \n\nmediciones - Regresa las últimas mediciones de la temperatura y presión.\
     \n\ntemperatura - Regresa el último valor de temperatura de cada sensor.  \
     \n\npresion - Regresa el último valor de presión del sensor. \
+    \n\nconfig - Configuraciones del bot.\
     \n\nhelp - Regresa la lista de los comandos y su descripción. \
     \n\nfaq - Preguntas frecuentes."
     chat_id = update.effective_chat.id
