@@ -1,10 +1,10 @@
 import logging, os, signal, time
 from typing import Text
-from telegram.ext import Updater, CommandHandler, MessageHandler, Filters, CallbackQueryHandler, InlineQueryHandler
-from telegram import ReplyKeyboardMarkup, KeyboardButton, InlineKeyboardButton, InlineKeyboardMarkup, InputTextMessageContent
+from telegram.ext import Updater, CommandHandler, MessageHandler, Filters, CallbackQueryHandler
+from telegram import ReplyKeyboardMarkup, KeyboardButton, InlineKeyboardButton, InlineKeyboardMarkup
 from telegram.ext.messagehandler import MessageHandler  
 from Auxiliares import Medidas
-Token = "1623948894:AAEPSfMTtW7q9mu96Y-7Ftvdl5JkYtEsj9c"
+Token = "1856897280:AAG-X-LqbFDk16PC9YVtm3jtpwPaAR76e44"
 
 logging.basicConfig(format='%(asctime)s-%(name)s-%(levelname)s-%(message)s', level=logging.INFO)
 logger = logging.getLogger('SensoresICNBot')
@@ -16,6 +16,7 @@ door = False
 
 def refrescar():
     global d1, d2, d3, d4, c5, c6, ca, cb, pf, now
+    logger.info('Refresqué')
     meds = Medidas(a,b,c)
     d1, d2, d3, d4, c5, c6, ca, cb, pf = meds
     now=time.strftime("%X")
@@ -46,13 +47,13 @@ def stop(update,context):
 def help1(update,context):
     logger.info('He recibido un comando help')
     text = "Los comandos válidos son los siguientes: \
-    \n\nstart - Inicia el bot. \
-    \n\nkill - Detiene el bot. \
-    \n\nmediciones - Regresa las últimas mediciones de la temperatura y presión de los distintos sensores.\
-    \n\ntemperatura - Regresa el último valor de temperatura de cada sensor.  \
-    \n\npresion - Regresa el último valor de presión del sensor. \
-    \n\nconfig - Configuraciones del bot.\
-    \n\nhelp - Regresa la lista de los comandos y su descripción."
+    \n\n/start - Inicia el bot. \
+    \n\n/mediciones - Regresa las últimas mediciones de la temperatura y presión de los distintos sensores.\
+    \n\n/temperatura - Regresa el último valor de temperatura de cada sensor.  \
+    \n\n/presion - Regresa el último valor de presión del sensor. \
+    \n\n/config - Configuraciones del bot.\
+    \n\n/help - Regresa la lista de los comandos y su descripción. \
+    \n\n/kill - Detiene el bot."
     chat_id = update.effective_chat.id
     keyboard(chat_id, text, context)
 
@@ -82,7 +83,7 @@ def temperatura(update,context):
     
 def presion(update,context):
     global r
-    logger.info('He recibico un comando presión')
+    logger.info('He recibido un comando presión')
     refrescar()
     text= "La última medición de la presión 💨 es: \n" + pf + \
     "\n\nHora de última actualización {}".format(now)
@@ -109,6 +110,7 @@ def unknown(update,context):
     
 def Options(update,context):
     global door, s
+    logger.info('Estoy en Options')
     query = update.callback_query
     query.answer()
     
@@ -149,21 +151,18 @@ def Options(update,context):
             presion(update,context)
 
 def Text(update,context):
-    global a, b, c
+    global a, b, c, door
+    logger.info('Ando en Text')
     if door:
         nueva_ruta = update.message.text
         try:
             if s==2:
                 a='{}'.format(nueva_ruta)
-                print(a)
             elif s==3:
                 b='{}'.format(nueva_ruta)
-                print(b)
             elif s==4:
                 c='{}'.format(nueva_ruta)
-                print(c)
             refrescar()
-            print("5")
             chat_id = update.effective_chat.id
             text = "La ruta del archivo ha sido actualizada. 😎"
             context.bot.send_message(chat_id, text)
@@ -171,13 +170,13 @@ def Text(update,context):
             chat_id = update.effective_chat.id
             text = "La ruta del archivo que ingresaste es inválida. 😕"
             context.bot.send_message(chat_id, text)
+        door =  False
     else:
         chat_id = update.effective_chat.id
         name = update.effective_chat.first_name
-        text = "Lo siento, " + name + ". 😕" + "\nNo entiendo que me quieres decir. 🤔"
+        text = "Lo siento, " + name + ". 😕" + "\nNo entiendo que me quieres decir. \
+        revisa la lista de comandos con /help."
         context.bot.send_message(chat_id, text)
-        
-        
 
 if __name__ == '__main__':
     updater = Updater(token=Token, use_context=True)
