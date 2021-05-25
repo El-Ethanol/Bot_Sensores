@@ -1,4 +1,5 @@
 import logging, os, signal, time
+import numpy as np
 from typing import Text
 from telegram.ext import Updater, CommandHandler, MessageHandler, Filters, CallbackQueryHandler
 from telegram import ReplyKeyboardMarkup, KeyboardButton, InlineKeyboardButton, InlineKeyboardMarkup
@@ -12,14 +13,24 @@ logger = logging.getLogger('SensoresICNBot')
 a = 'Temperatura135.txt'
 b = 'TemperaturaM.txt'
 c = 'Presion.csv'
+tiempos = []
 door = False
+n=0
 
-def refrescar():
-    global d1, d2, d3, d4, c5, c6, ca, cb, pf, now
+def refrescar(update,context):
+    global d1, d2, d3, d4, c5, c6, ca, cb, pf, now, n, f1, f2, f3
     logger.info('Refresqué')
     meds = Medidas(a,b,c)
-    d1, d2, d3, d4, c5, c6, ca, cb, pf = meds
+    d1, d2, d3, d4, c5, c6, ca, cb, pf, time1, time2, time3 = meds
     now=time.strftime("%X")
+    tiempos.append([time1,time2,time3])
+    if n == 1:
+        f1 = tiempos[n][0] == tiempos[n-1][0]
+        f2 = tiempos[n][1] == tiempos[n-1][1]
+        f3 = tiempos[n][2] == tiempos[n-1][2]
+        if f1 or f2 or f3: 
+            Error(update,context) 
+    n = n + 1
 
 def start(update,context):
     logger.info('He recibido un comando start')
@@ -48,7 +59,7 @@ def help1(update,context):
     logger.info('He recibido un comando help')
     text = "Los comandos válidos son los siguientes: \
     \n\n/start - Inicia el bot. \
-    \n\n/mediciones - Regresa las últimas mediciones de la temperatura y presión de los distintos sensores.\
+    \n\n/mediciones - Regresa las últimas mediciones del la temperatura del Cernox B y de la temperatura del MKS.\
     \n\n/temperatura - Regresa el último valor de temperatura de cada sensor.  \
     \n\n/presion - Regresa el último valor de presión del sensor. \
     \n\n/config - Configuraciones del bot.\
@@ -60,9 +71,9 @@ def help1(update,context):
 def mediciones(update,context):
     global r
     logger.info('He recibido un comando mediciones')
-    refrescar()
+    refrescar(update,context)
     text= "La últimas mediciones son: \n \
-        \n🌡 Temperatura:\n" + d1 + d2 + d3 + d4 + c5 + c6 + ca + cb + "\n \n💨 Presión: \n" + pf + \
+        \n🌡 Temperatura:\n" + cb + "\n \n💨 Presión: \n" + pf + \
             "\n\nHora de Actualización {}".format(now)
     chat_id = update.effective_chat.id
     keyboard = [[InlineKeyboardButton("Refrescar", callback_data='1')]]
@@ -72,7 +83,7 @@ def mediciones(update,context):
 def temperatura(update,context):
     global r
     logger.info('He recibido un comando temperatura')
-    refrescar()
+    refrescar(update,context)
     text= "La última medición de las temperaturas 🌡 es: \n \
     " + d1 + d2 + d3 + d4 + c5 + c6 + ca + cb + \
     "\n\nHora de última actualización {}".format(now)
@@ -84,7 +95,7 @@ def temperatura(update,context):
 def presion(update,context):
     global r
     logger.info('He recibido un comando presión')
-    refrescar()
+    refrescar(update,context)
     text= "La última medición de la presión 💨 es: \n" + pf + \
     "\n\nHora de última actualización {}".format(now)
     chat_id = update.effective_chat.id
@@ -177,6 +188,27 @@ def Text(update,context):
         text = "Lo siento, " + name + ". 😕" + "\nNo entiendo que me quieres decir. \
         revisa la lista de comandos con /help."
         context.bot.send_message(chat_id, text)
+        
+def Error(update,context):
+    chat_id = update.effective_chat.id
+    name = update.effective_chat.first_name
+    if f1 and f2 and f3:
+        text1 = name + ", revisa que se estén actualizando los archivos. 🧐 \
+    \nMe parece que no se están guardando nuevos datos." 
+        context.bot.send_message(chat_id, text1)
+    elif (f1 and f2) or (f1 and f3) or (f3 and f2) :
+        text1 = name + ", revisa que se estén actualizando los archivos. 🧐 \
+    \nMe parece que no se están guardando nuevos datos." 
+        context.bot.send_message(chat_id, text1)
+    elif f1:
+        archivo="Temperatura Diodos y Cernox 5 y 6"
+    elif f2:
+        archivo="Temperaturas Cernox A y B"
+    elif f3:
+        archivo="Presión"
+    text = name + ", revisa que se esté actualizando el archivo de " + archivo + ". 🧐 \
+    \nMe parece que no se están guardando nuevos datos." 
+    context.bot.send_message(chat_id, text)
 
 if __name__ == '__main__':
     updater = Updater(token=Token, use_context=True)
