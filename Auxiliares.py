@@ -33,6 +33,8 @@ def Medidas(a,b,c):
     time2 = t2[0]
     time3 = p1[0]
     
+    valores=[t1,t2,p1]
+    
     d1 = "\nDiodo 1: " + str(t1[1]) + "K"
     d2 = "\nDiodo 2: " + str(t1[2]) + "K"
     d3 = "\nDiodo 3: " + str(t1[3]) + "K"
@@ -43,4 +45,4 @@ def Medidas(a,b,c):
     cb = "\nCernox B: " + str(t2[2]) + " K"
     pf = "\nMKS Sensor: " + str(p1[1]) + " Torr"
 
-    return d1, d2, d3, d4, c5, c6, ca, cb, pf , time1, time2, time3 
+    return d1, d2, d3, d4, c5, c6, ca, cb, pf , time1, time2, time3, valores
