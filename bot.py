@@ -14,15 +14,26 @@ logging.basicConfig(format='%(asctime)s-%(name)s-%(levelname)s-%(message)s', lev
 logger = logging.getLogger('SensoresICNBot')
 
 #Archivos que lee el bot de Temperatura (Diodos y Cernox 5 y 6), Temperatura (Cernox A y B) y Presión, respectivamente.
-a = 'Temperatura135.txt'
-b = 'TemperaturaM.txt'
-c = 'Presion.csv'
+a='Temperatura135.txt'
+b='TemperaturaM.txt'
+c='Presion.csv'
 
 #Variables.
 tiempos = [] #Este array sirve para que el bot lea cuándo fue la última medición.
 door = False #Cuando esto es verdadero, permite cambiar las rutas de los archivos que se leen,
 n=0 #Contador para ver si se están actualizando los datos.
+interval = 3600 #Tiempo entre alertas
 
+#Parametros.
+pd1=100
+pd2=100
+pd3=100
+pd4=100
+pc5=100
+pc6=100
+pca=100
+pcb=100
+pp1=100
 
 #Función que obtiene los datos de los sensores y checa si se están actualizando.
 def refrescar(update,context):
@@ -48,11 +59,45 @@ def start(update,context):
            \n\nTe puedo dar las últimas mediciones de los sensores de temperatura y de presión."
     chat_id = update.effective_chat.id #Se obtiene el identificador dónde se mandará el mensaje.
     keyboard(chat_id, text, context) #Se envía el mensaje y sale el comando.
+    context.job_queue.run_repeating(parameters, interval = 1, first = 0, context=update.effective_chat.id)
+    
+def parameters(context):
+    meds = Medidas(a,b,c)
+    chat_id=context.job.context
+    d1, d2, d3, d4, c5, c6, ca, cb, pf, time1, time2, time3, valores = meds
+    if abs(float(valores[0][1]))<pd1:
+        text="¡Cuidado! La temperatura del Diodo 1, está en fuera del rango. \nLa temperatura es:" + str(valores[0][1])
+        context.bot.send_message(chat_id, text)
+    elif abs(float(valores[0][2]))<pd2:
+        text="¡Cuidado! La temperatura del Diodo 2, está en fuera del rango. \nLa temperatura es:" + str(valores[0][2])
+        context.bot.send_message(chat_id, text)   
+    elif abs(float(valores[0][3]))<pd3:
+        text="¡Cuidado! La temperatura del Diodo 3, está en fuera del rango. \nLa temperatura es:" + str(valores[0][3])
+        context.bot.send_message(chat_id, text)   
+    elif abs(float(valores[0][4]))<pd4:
+        text="¡Cuidado! La temperatura del Diodo 4, está en fuera del rango. \nLa temperatura es:" + str(valores[0][4])
+        context.bot.send_message(chat_id, text)   
+    elif abs(float(valores[0][5]))<pc5:
+        text="¡Cuidado! La temperatura del Cernox 5, está en fuera del rango. \nLa temperatura es:" + str(valores[0][5])
+        context.bot.send_message(chat_id, text)   
+    elif abs(float(valores[0][6]))<pc6:
+        text="¡Cuidado! La temperatura del Cernox 6, está en fuera del rango. \nLa temperatura es:" + str(valores[0][6])
+        context.bot.send_message(chat_id, text)   
+    elif abs(float(valores[1][1]))<pca:
+        text="¡Cuidado! La temperatura del Cernox A, está en fuera del rango. \nLa temperatura es:" + str(valores[1][1])
+        context.bot.send_message(chat_id, text)   
+    elif abs(float(valores[1][2]))<pcb:
+        text="¡Cuidado! La temperatura del Cernox B, está en fuera del rango. \nLa temperatura es:" + str(valores[1][2])
+        context.bot.send_message(chat_id, text)   
+    elif abs(float(valores[2][1]))<pp1:
+        text="¡Cuidado! La presión está en fuera del rango. \nLa presión es:" + str(valores[2][1])
+        context.bot.send_message(chat_id, text)   
+
     
 #Función para activar el teclado con los comandos predeterminados.    
 def keyboard(chat_id, text, context):
     kb = [[KeyboardButton("/mediciones")], [KeyboardButton("/temperatura")], [KeyboardButton("/presion")],
-          [KeyboardButton("/startalarm"), KeyboardButton("/stopalarm")],
+          [KeyboardButton("/startalerts"), KeyboardButton("/stopalerts")],
           [KeyboardButton("/help"), KeyboardButton("/config")], [KeyboardButton("/kill")]]
     kb1 = ReplyKeyboardMarkup(kb, resize_keyboard=True, one_time_keyboard=True)
     context.bot.send_message(chat_id, text, reply_markup=kb1)
@@ -75,8 +120,8 @@ def help1(update,context):
     \n\n/mediciones - Regresa las últimas mediciones de la temperatura del Cernox B y de la presión del MKS.\
     \n\n/temperatura - Regresa el último valor de temperatura de cada sensor.  \
     \n\n/presion - Regresa el último valor de presión del sensor. \
-    \n\n/startalarm - Comienza a enviar alarmas. \
-    \n\n/stopalarm - Detiene el envío de alarmas. \
+    \n\n/startalerts - Comienza a enviar alertas. \
+    \n\n/stopalerts - Detiene el envío de alertas. \
     \n\n/config - Configuraciones del bot.\
     \n\n/help - Regresa la lista de los comandos y su descripción. \
     \n\n/kill - Detiene el bot."
@@ -126,9 +171,9 @@ def config(update,context):
     logger.info('He recibido un comando config')
     text= "⚙ ¿Qué deseas configurar? ⚙"
     chat_id = update.effective_chat.id
-    keyboard = [[InlineKeyboardButton("Cambiar archivo de temperatura para Diodos y Cernox 5 y 6.", callback_data='2')],
-                 [InlineKeyboardButton("Cambiar archivo de temperatura para Cernox A y B.", callback_data='3') ],
-                 [InlineKeyboardButton("Cambiar archivo de presión.", callback_data='4')]]
+    keyboard = [[InlineKeyboardButton("Cambiar parametros de Temperatura.", callback_data='2')],
+                 [InlineKeyboardButton("Cambiar parametros de Presión.", callback_data='3') ],
+                 [InlineKeyboardButton("Cambiar tiempo entre Alertas.", callback_data='4')]]
     context.bot.send_message(chat_id, text, reply_markup=InlineKeyboardMarkup(keyboard))
     
 #Función para comandos inválidos.    
@@ -141,15 +186,15 @@ def unknown(update,context):
         
 #Alarmas (activación, detención e información.)
 def startalarm(update,context):
-    logger.info('He recibido un comando startalarm')
-    text = "Las alarmas están activadas. 🚨"
+    logger.info('He recibido un comando startalerts')
+    text = "Las alertas están activadas. 🚨"
     chat_id = update.effective_chat.id
     context.bot.send_message(chat_id, text)
-    context.job_queue.run_repeating(alarma,interval = 60, first = 0, context=update.effective_chat.id)
+    context.job_queue.run_repeating(alarma, interval = interval, first = 0, context=update.effective_chat.id)
     
 def stopalarm(update,context):
     chat_id = update.effective_chat.id
-    text = "Las alarmas se han desactivado. 🔕"
+    text = "Las alertas se han desactivado. 🔕"
     context.bot.send_message(chat_id, text)
     context.job_queue.stop()
     
@@ -158,15 +203,18 @@ def alarma(context):
     meds = Medidas(a,b,c)
     chat_id=context.job.context
     d1, d2, d3, d4, c5, c6, ca, cb, pf, time1, time2, time3, valores = meds
-    now=time.strftime("%X")
-    text= "La últimas mediciones son: \n \
+    now = time.strftime("%X")
+    text = "Las mediciones desde la última alerta son: \n \
         \n🌡 Temperatura:\n" + d1 + d2 + d3 + d4 + c5 + c6 + ca + cb + "\n \n💨 Presión: \n" + pf + \
             "\n\nHora de medición: {}".format(now)
     context.bot.send_message(chat_id, text)
+    text = "La gráfica de la presión desde la última alerta es:"
+    context.bot.send_message(chat_id, text)
+    context.bot.send_photo(chat_id, photo=open('grafica1.png', 'rb'))
     
 #Función para administrar los botones en pantalla.
 def Options(update,context):
-    global door, s, t, f
+    global door, s, t, f, interval
     logger.info('Estoy en Options')
     query = update.callback_query
     query.answer()
@@ -177,30 +225,34 @@ def Options(update,context):
    #Cambios de rutas de los archivos.
     if choice == '2':
         chat_id = update.effective_chat.id
-        text = "Ingresa la ruta del archivo, por ejemplo: \
-            \n\\home\\Usuario\\Documentos\\ArchivoTemperaturas.txt"
+        text = "Para poder cambiar el parametro, escribe, por ejemplo:\nDiodo_1: 100 K"
         context.bot.send_message(chat_id, text)
-        text = "El archivo que actualmente estoy leyendo es {}".format(a) 
+        text = "Es importante que respetes los espacios."
+        context.bot.send_message(chat_id, text)
+        text = "Los parametros actualmente son:\n\nDiodo1:" + str(pd1) + \
+            "K \nDiodo 2: " + str(pd2) + " K\nDiodo 3: " + str(pd3) + " K\nDiodo 4: " + str(pd4) + \
+            "K \nCernox 5: " + str(pc5) + " K\nCernox 6: " + str(pc6) + " K\nCernox A: " + str(pca) + \
+            "K \nCernox B: " + str(pcb)  + " K"
         context.bot.send_message(chat_id, text)
         s=2
     elif choice == '3':
         chat_id = update.effective_chat.id
-        text = "Ingresa la ruta del archivo, por ejemplo: \
-            \n\\home\\Usuario\\Documentos\\ArchivoTemperaturas.txt."
+        text = "Para poder cambiar el parametro, escribe, por ejemplo:\nMKS: 100 Torr"
         context.bot.send_message(chat_id, text)
-        text = "El archivo que actualmente estoy leyendo es {}".format(b) 
+        text = "Es importante que respetes el espacios."
+        context.bot.send_message(chat_id, text)
+        text = "El parametro actualmente es:\nMKS: " + str(pp1) + " Torr" 
         context.bot.send_message(chat_id, text)
         s=3
     elif choice == '4':
         chat_id = update.effective_chat.id
-        text = "Ingresa la ruta del archivo, por ejemplo: \
-            \n\\home\\Usuario\\Documentos\\ArchivoPresiones.csv"
+        text = "El tiempo entre alarma y alarma es {} min".format(interval/60)
         context.bot.send_message(chat_id, text)
-        text = "El archivo que actualmente estoy leyendo es {}".format(c)
+        text = "Ingresa el tiempo entre alarmas en minutos:"
         context.bot.send_message(chat_id, text)
         s=4
         
-   #Botones para refrescar.     
+    #Botones para refrescar.     
     elif choice == '1':
         if r==1:
             mediciones(update,context)
@@ -211,21 +263,46 @@ def Options(update,context):
             
 #Función para que el bot detecté los mensajes con las rutas.        
 def Text(update,context):
-    global a, b, c, door
+    global door, interval, pd1, pd2, pd3, pd4, pc5, pc6, pca, pcb, pp1
     logger.info('Ando en Text')
     if door:
-        nueva_ruta = update.message.text
+        parametro = update.message.text
         try:
             if s==2:
-                a='{}'.format(nueva_ruta)
+                parametro=parametro.split(' ')
+                try: 
+                    if 'Diodo_1:'==parametro[0]:
+                        pd1 = parametro[1]
+                    elif 'Diodo_2:'==parametro[0]:
+                        pd2 = parametro[1]
+                    elif 'Diodos_3:'==parametro[0]:
+                        pd3 = parametro[1]
+                    elif 'Diodos_4:'==parametro[0]:
+                        pd4 = parametro[1]
+                    elif 'Cernox_5:'==parametro[0]:
+                        pc5 = parametro[1]
+                    elif 'Cernox_6:'==parametro[0]:
+                        pc6 = parametro[1]
+                    elif 'Cernox_A:'==parametro[0]:
+                        pca = parametro[1]
+                    elif 'Cernox_B:'==parametro[0]:
+                        pcb = parametro[1]
+                    elif 'MKS:'==parametro[0]:
+                        pp1 = parametro[1]
+                    chat_id = update.effective_chat.id
+                    text = "El parametro de" + parametro[0] + "ha sido actualizado. 😎"
+                    context.bot.send_message(chat_id, text)
+                except:
+                    chat_id = update.effective_chat.id
+                    text = "Revisa que el mensaje esté bien escrito"
+                    context.bot.send_message(chat_id, text)
             elif s==3:
-                b='{}'.format(nueva_ruta)
+                parametro=parametro.split(' ')
             elif s==4:
-                c='{}'.format(nueva_ruta)
-            refrescar(update,context)
-            chat_id = update.effective_chat.id
-            text = "La ruta del archivo ha sido actualizada. 😎"
-            context.bot.send_message(chat_id, text)
+                interval=float(parametro)*60
+                chat_id = update.effective_chat.id
+                text = "El tiempo entre alarmas ha sido actualizado. 😎"
+                context.bot.send_message(chat_id, text)
         except:
             chat_id = update.effective_chat.id
             text = "La ruta del archivo que ingresaste es inválida. 😕"
@@ -246,11 +323,20 @@ def Error(update,context):
     archivo= "HOLA"
     text = name + ", revisa que se esté actualizando el archivo de " + archivo + ". 🧐 \
     \nMe parece que no se están guardando nuevos datos." 
-    if (f1 and f2 and f3) or (f1 and f2) or (f1 and f3) or (f3 and f2):
+    if f1 and f2 and f3:
         text= name + ", revisa que se estén actualizando los archivos. 🧐 \
     \nMe parece que no se están guardando nuevos datos." 
+    elif f1 and f2:
+        text = name + ", revisa que se estén actualizando los archivos de Temperatura (Diodos y Cernox). 🧐 \
+    \nMe parece que no se están guardando nuevos datos."
+    elif f1 and f3:
+        text = name + ", revisa que se estén actualizando el archivo de Temperatura (Diodos y Cernox 5 y 6) y el de Presión. 🧐 \
+    \nMe parece que no se están guardando nuevos datos."
+    elif f2 and f3:
+        text = name + ", revisa que se estén actualizando el archivo de Temperatura (Cernox A y B) y el de Presión. 🧐 \
+    \nMe parece que no se están guardando nuevos datos."
     elif f1:
-        archivo="Temperatura Diodos y Cernox 5 y 6"
+        archivo="Temperatura Diodos y Cernox 5 y 6"  
     elif f2:
         archivo="Temperaturas Cernox A y B"
     elif f3:
@@ -265,15 +351,15 @@ if __name__ == '__main__':
     dispatcher = updater.dispatcher
     
    #Adición de comandos y conectarlos con su función.
-    dispatcher.add_handler(CommandHandler('start', start))
+    dispatcher.add_handler(CommandHandler('start', start, pass_job_queue=True))
     dispatcher.add_handler(CommandHandler('kill', stop))
     dispatcher.add_handler(CommandHandler('help', help1))
     dispatcher.add_handler(CommandHandler('mediciones', mediciones))
     dispatcher.add_handler(CommandHandler('temperatura', temperatura))
     dispatcher.add_handler(CommandHandler('presion', presion))
     dispatcher.add_handler(CommandHandler('config', config))
-    dispatcher.add_handler(CommandHandler('startalarm', startalarm, pass_job_queue=True)) #pass_job_queue hace que comience el contador para mandar las alarmas.
-    dispatcher.add_handler(CommandHandler('stopalarm', stopalarm, pass_job_queue=True)) 
+    dispatcher.add_handler(CommandHandler('startalerts', startalarm, pass_job_queue=True)) #pass_job_queue hace que comience el contador para mandar las alarmas.
+    dispatcher.add_handler(CommandHandler('stopalerts', stopalarm, pass_job_queue=True)) 
     
    #Conectar los mensajes en texto con la función para las rutas.
     dispatcher.add_handler(MessageHandler(Filters.text, Text))
@@ -287,4 +373,4 @@ if __name__ == '__main__':
     
    #Activadores del bot. 
     updater.start_polling()
-    updater.idle()   
+    updater.idle()    
