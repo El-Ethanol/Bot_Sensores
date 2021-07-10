@@ -33,7 +33,7 @@ pc5=100
 pc6=100
 pca=100
 pcb=100
-pp1=100
+pp1=0.0
 
 #Función que obtiene los datos de los sensores y checa si se están actualizando.
 def refrescar(update,context):
@@ -53,15 +53,17 @@ def refrescar(update,context):
 
 #Comando para iniciar el bot.
 def start(update,context):
-    logger.info('He recibido un comando start')
+    logger.info('Start')
     name = update.effective_chat.first_name #Se obtiene el nombre del usario.
     text = "¡Hola, " + name + "! 👋👋👋\n\nSoy el bot 🤖 del Lab. de Detectores del ICN.\
            \n\nTe puedo dar las últimas mediciones de los sensores de temperatura y de presión."
     chat_id = update.effective_chat.id #Se obtiene el identificador dónde se mandará el mensaje.
     keyboard(chat_id, text, context) #Se envía el mensaje y sale el comando.
-    context.job_queue.run_repeating(parameters, interval = 1, first = 0, context=update.effective_chat.id)
+    context.job_queue.run_repeating(parameters, interval = 30, first = 0, name='parametros' , context=update.effective_chat.id)
     
+#Función de definiciones de parametros.    
 def parameters(context):
+    logger.info('Parametros')
     meds = Medidas(a,b,c)
     chat_id=context.job.context
     d1, d2, d3, d4, c5, c6, ca, cb, pf, time1, time2, time3, valores = meds
@@ -92,11 +94,10 @@ def parameters(context):
     elif abs(float(valores[2][1]))<pp1:
         text="¡Cuidado! La presión está en fuera del rango. \nLa presión es:" + str(valores[2][1])
         context.bot.send_message(chat_id, text)   
-
     
 #Función para activar el teclado con los comandos predeterminados.    
 def keyboard(chat_id, text, context):
-    kb = [[KeyboardButton("/mediciones")], [KeyboardButton("/temperatura")], [KeyboardButton("/presion")],
+    kb = [[KeyboardButton("/start")],[KeyboardButton("/mediciones")], [KeyboardButton("/temperatura")], [KeyboardButton("/presion")],
           [KeyboardButton("/startalerts"), KeyboardButton("/stopalerts")],
           [KeyboardButton("/help"), KeyboardButton("/config")], [KeyboardButton("/kill")]]
     kb1 = ReplyKeyboardMarkup(kb, resize_keyboard=True, one_time_keyboard=True)
@@ -104,7 +105,7 @@ def keyboard(chat_id, text, context):
 
 #Comando para matar al bot. (Si es activado se deberá reiniciar el script.)    
 def stop(update,context):
-    logger.info('He recibido un comando stop')
+    logger.info('Kill')
     name = update.effective_chat.first_name
     text = "¡Hasta pronto, " + name + "! 👋👋👋"
     chat_id = update.effective_chat.id
@@ -114,14 +115,14 @@ def stop(update,context):
     
 #Comando para indiciarnos los comandos que existen. 
 def help1(update,context):
-    logger.info('He recibido un comando help')
+    logger.info('Help')
     text = "Los comandos válidos son los siguientes: \
     \n\n/start - Inicia el bot. \
     \n\n/mediciones - Regresa las últimas mediciones de la temperatura del Cernox B y de la presión del MKS.\
     \n\n/temperatura - Regresa el último valor de temperatura de cada sensor.  \
     \n\n/presion - Regresa el último valor de presión del sensor. \
-    \n\n/startalerts - Comienza a enviar alertas. \
-    \n\n/stopalerts - Detiene el envío de alertas. \
+    \n\n/startalert - Comienza a enviar alertas. \
+    \n\n/stopalert - Detiene el envío de alertas. \
     \n\n/config - Configuraciones del bot.\
     \n\n/help - Regresa la lista de los comandos y su descripción. \
     \n\n/kill - Detiene el bot."
@@ -131,7 +132,7 @@ def help1(update,context):
 #Comando para recibir las ultimas mediciones.
 def mediciones(update,context):
     global r
-    logger.info('He recibido un comando mediciones')
+    logger.info('Mediciones')
     refrescar(update,context)
     text= "La últimas mediciones son: \n \
         \n🌡 Temperatura:\n" + cb + "\n \n💨 Presión: \n" + pf + \
@@ -141,10 +142,10 @@ def mediciones(update,context):
     context.bot.send_message(chat_id, text, reply_markup=InlineKeyboardMarkup(keyboard))
     r = 1
 
-#Comando para recibir las ultimas mediciones de la temperatura.
+#Comando para recibir las últimas mediciones de la temperatura.
 def temperatura(update,context):
     global r
-    logger.info('He recibido un comando temperatura')
+    logger.info('Temperatura')
     refrescar(update,context)
     text= "La última medición de las temperaturas 🌡 es: \n \
     " + d1 + d2 + d3 + d4 + c5 + c6 + ca + cb + \
@@ -157,7 +158,7 @@ def temperatura(update,context):
 #Comando para recibir la última medición de la presión.    
 def presion(update,context):
     global r
-    logger.info('He recibido un comando presión')
+    logger.info('Presión')
     refrescar(update,context)
     text= "La última medición de la presión 💨 es: \n" + pf + \
     "\n\nHora de última actualización {}".format(now)
@@ -168,7 +169,7 @@ def presion(update,context):
     
 #Comando para poder cambiar las rutas de los archivos (y próximamente los parametros).   
 def config(update,context):
-    logger.info('He recibido un comando config')
+    logger.info('Config')
     text= "⚙ ¿Qué deseas configurar? ⚙"
     chat_id = update.effective_chat.id
     keyboard = [[InlineKeyboardButton("Cambiar parametros de Temperatura.", callback_data='2')],
@@ -178,7 +179,7 @@ def config(update,context):
     
 #Función para comandos inválidos.    
 def unknown(update,context):
-    logger.info('He recibido un comando inválido')
+    logger.info('Inválido')
     name = update.effective_chat.first_name
     text = "Lo siento, " + name + ".\nEse no es un comando válido. 😓" 
     chat_id = update.effective_chat.id
@@ -186,25 +187,27 @@ def unknown(update,context):
         
 #Alarmas (activación, detención e información.)
 def startalarm(update,context):
-    logger.info('He recibido un comando startalerts')
+    logger.info('Iniciar Alarmas')
     text = "Las alertas están activadas. 🚨"
     chat_id = update.effective_chat.id
     context.bot.send_message(chat_id, text)
-    context.job_queue.run_repeating(alarma, interval = interval, first = 0, context=update.effective_chat.id)
+    newjob2 = context.job_queue.run_repeating(alarma, interval = interval, first = 0, name='Alarmas', context=update.effective_chat.id)
     
 def stopalarm(update,context):
+    logger.info('Detener Alarmas')
     chat_id = update.effective_chat.id
     text = "Las alertas se han desactivado. 🔕"
+    jb = context.job_queue.get_jobs_by_name("Alarmas")
     context.bot.send_message(chat_id, text)
-    context.job_queue.stop()
+    jb[0].schedule_removal()
     
 def alarma(context):
-    logger.info('Estoy en alarma')
+    logger.info('Alarma')
     meds = Medidas(a,b,c)
     chat_id=context.job.context
     d1, d2, d3, d4, c5, c6, ca, cb, pf, time1, time2, time3, valores = meds
     now = time.strftime("%X")
-    text = "Las mediciones desde la última alerta son: \n \
+    text = "Las mediciones desde la última alarma son: \n \
         \n🌡 Temperatura:\n" + d1 + d2 + d3 + d4 + c5 + c6 + ca + cb + "\n \n💨 Presión: \n" + pf + \
             "\n\nHora de medición: {}".format(now)
     context.bot.send_message(chat_id, text)
@@ -215,14 +218,14 @@ def alarma(context):
 #Función para administrar los botones en pantalla.
 def Options(update,context):
     global door, s, t, f, interval
-    logger.info('Estoy en Options')
+    logger.info('Options')
     query = update.callback_query
     query.answer()
     
     choice = query.data
     door = True 
        
-   #Cambios de rutas de los archivos.
+   #Cambio de parametros de temperatura.
     if choice == '2':
         chat_id = update.effective_chat.id
         text = "Para poder cambiar el parametro, escribe, por ejemplo:\nDiodo_1: 100 K"
@@ -235,6 +238,7 @@ def Options(update,context):
             "K \nCernox B: " + str(pcb)  + " K"
         context.bot.send_message(chat_id, text)
         s=2
+   #Cambio de parametro de presión.
     elif choice == '3':
         chat_id = update.effective_chat.id
         text = "Para poder cambiar el parametro, escribe, por ejemplo:\nMKS: 100 Torr"
@@ -244,6 +248,7 @@ def Options(update,context):
         text = "El parametro actualmente es:\nMKS: " + str(pp1) + " Torr" 
         context.bot.send_message(chat_id, text)
         s=3
+   #Cambio de tiempo de alarma.
     elif choice == '4':
         chat_id = update.effective_chat.id
         text = "El tiempo entre alarma y alarma es {} min".format(interval/60)
@@ -252,7 +257,7 @@ def Options(update,context):
         context.bot.send_message(chat_id, text)
         s=4
         
-    #Botones para refrescar.     
+   #Botones para refrescar.     
     elif choice == '1':
         if r==1:
             mediciones(update,context)
@@ -261,10 +266,11 @@ def Options(update,context):
         elif r==3:
             presion(update,context)
             
-#Función para que el bot detecté los mensajes con las rutas.        
+            
+#Función para que el bot detecté los mensajes con los parametros.      
 def Text(update,context):
     global door, interval, pd1, pd2, pd3, pd4, pc5, pc6, pca, pcb, pp1
-    logger.info('Ando en Text')
+    logger.info('Text')
     if door:
         parametro = update.message.text
         try:
@@ -317,7 +323,7 @@ def Text(update,context):
         
 #Función en caso de que los archivos no se estén actualizado.        
 def Error(update,context):
-    logger.info("Pasé por errores.")
+    logger.info("Errores")
     chat_id = update.effective_chat.id
     name = update.effective_chat.first_name
     archivo= "HOLA"
