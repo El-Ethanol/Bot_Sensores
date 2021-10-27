@@ -6,8 +6,6 @@ from telegram import ReplyKeyboardMarkup, KeyboardButton, InlineKeyboardButton, 
 from telegram.ext.messagehandler import MessageHandler  
 from Auxiliares import Medidas
 
-#Identificador único del bot
-Token = "1856897280:AAG-X-LqbFDk16PC9YVtm3jtpwPaAR76e44"
 
 #Esto es para que el bot esté constantemente buscando en el servidor por mensajes nuevos.
 logging.basicConfig(format='%(asctime)s-%(name)s-%(levelname)s-%(message)s', level=logging.INFO)
